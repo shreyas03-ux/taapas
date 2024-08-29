@@ -1,0 +1,181 @@
+<!-- main/templates/main/home.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>T.A.P.A.S</title>
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <!-- Basic CSS for styling -->
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f2f6;
+            color: #333;
+            display: flex;
+            margin: 0;
+            padding: 0;
+        }
+
+        .sidebar {
+            width: 300px;
+            background-color: #edf0f5;
+            padding: 20px;
+            height: 100vh;
+            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .content {
+            flex-grow: 1;
+            padding: 20px;
+        }
+
+        h1 {
+            font-size: 24px;
+            color: #2c3e50;
+            margin-bottom: 20px;
+        }
+
+        h2 {
+            font-size: 18px;
+            color: #34495e;
+        }
+
+        button {
+            padding: 10px 15px;
+            background-color: #1f77b4;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            width: 100%;
+            margin-bottom: 10px;
+        }
+
+        button:hover {
+            background-color: #3b95d4;
+        }
+
+        .output-box {
+            background-color: #f7f9fc;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            display: flex;
+            align-items: center;
+            flex-direction: column;
+        }
+
+        .output-box pre {
+            background-color: #d3d3d3;
+            border-radius: 5px;
+            padding: 10px;
+            color: #2c3e50;
+            width: 100%;
+            overflow-x: auto;
+        }
+
+        .error {
+            color: red;
+            margin-top: 10px;
+        }
+
+        /* Style for the logout link */
+        .logout-link {
+            text-align: right;
+            margin-bottom: 20px;
+        }
+
+        .logout-link a {
+            color: #e74c3c;
+            text-decoration: none;
+        }
+
+        .logout-link a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <h3>Sessions</h3>
+        <form method="POST">
+            {% csrf_token %}
+            <input type="text" name="session_name" placeholder="New Session Name" required>
+            <button type="submit" name="new_session">Start New Session</button>
+        </form>
+
+        <form method="POST">
+            {% csrf_token %}
+            <label for="session">Choose a session:</label>
+            <select name="session" id="session">
+                {% for session in sessions %}
+                    <option value="{{ session }}">{{ session }}</option>
+                {% endfor %}
+            </select>
+            <button type="submit" name="select_session">Select Session</button>
+        </form>
+    </div>
+
+    <div class="content">
+        <!-- Logout link -->
+        <div class="logout-link">
+            <a href="{% url 'logout' %}">Logout</a>
+        </div>
+
+        <h1>T.A.P.A.S - Technical Assistance Platform for Advanced Solution</h1>
+        <h2>Current Session: {{ current_session }}</h2>
+
+        <button id="startRecording">Start</button>
+        <button id="stopRecording" style="display:none;">Stop</button>
+
+        <div class="output-box">
+            <p>Your output is generating.</p>
+            <pre>{{ output }}</pre>
+        </div>
+
+        {% if error %}
+            <p class="error">{{ error }}</p>
+        {% endif %}
+    </div>
+
+    <script>
+        document.getElementById("startRecording").onclick = function() {
+            fetch("{% url 'record_screen' %}", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded",
+                    "X-CSRFToken": "{{ csrf_token }}"
+                },
+                body: "duration=10&start_recording=true"
+            }).then(response => {
+                return response.json();
+            }).then(data => {
+                console.log(data);
+                if (data.message) {
+                    // Show stop button and hide start button
+                    document.getElementById("startRecording").style.display = "none";
+                    document.getElementById("stopRecording").style.display = "block";
+                }
+            });
+        };
+
+        document.getElementById("stopRecording").onclick = function() {
+            fetch("{% url 'record_screen' %}?action=stop", {
+                method: "GET"
+            }).then(response => {
+                return response.json();
+            }).then(data => {
+                console.log(data);
+                if (data.message) {
+                    // Show start button and hide stop button
+                    document.getElementById("stopRecording").style.display = "none";
+                    document.getElementById("startRecording").style.display = "block";
+                }
+            });
+        };
+    </script>
+</body>
+</html>
